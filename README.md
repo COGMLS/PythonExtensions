@@ -6,7 +6,7 @@ This repository is focus on developing Python modules to extend the capabilities
 
 | Module | Description | Version | Notes |
 | ------ | ----------- | ------- | ----- |
-
+| ProgressBar | Offers a console progress bar to Python 3 | 1.0.0 |  |
 
 # License
 
