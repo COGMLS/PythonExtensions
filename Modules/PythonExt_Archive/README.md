@@ -1,4 +1,8 @@
-# Python Archive TAR Tools
+# Python Archive Tools
+
+Python module to manage backup, restore and archiving operations.
+
+## Archive Tar Tool:
 
 Python module to produce backup archives using TAR files with option to compress them with "gzip". This module offers additional methods to help in support in log files and get files and directories paths, including support to filter them and following links.
 
