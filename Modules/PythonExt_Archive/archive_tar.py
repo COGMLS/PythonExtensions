@@ -4,6 +4,23 @@ import tarfile
 import time
 import io
 import math
+import enum
+
+class LinkPathAnalysisBehavior(enum.IntEnum):
+    """
+    Link path analysis behavior
+    ---------------------------------------------
+
+    Acceptable values to determinate the link path analysis in
+    methods like getPathList2. Where links have special treatment
+    and can be isolated from files and directories.
+    """
+
+    DO_NOT_ANALYZE = 0
+    TREAT_AS_REGULAR_FILES = 1
+    TREAT_AS_SPECIAL_FILES = 2
+    FOLLOW_LINK_PATH = 3
+    pass
 
 # Get the Date Time information as a string, using ISO 8601 format
 # NOTE: If exportTimeZone is true but not exportTime, the time will be exported
