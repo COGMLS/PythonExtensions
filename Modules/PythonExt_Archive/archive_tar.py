@@ -1,500 +1,85 @@
+"""
+"""
+
 import os
 import sys
 import tarfile
-import time
-import io
-import math
-import enum
 
-class LinkPathAnalysisBehavior(enum.IntEnum):
-    """
-    Link path analysis behavior
-    ---------------------------------------------
-
-    Acceptable values to determinate the link path analysis in
-    methods like getPathList2. Where links have special treatment
-    and can be isolated from files and directories.
-    """
-
-    DO_NOT_ANALYZE = 0
-    TREAT_AS_REGULAR_FILES = 1
-    TREAT_AS_SPECIAL_FILES = 2
-    FOLLOW_LINK_PATH = 3
-    pass
-
-# Get the Date Time information as a string, using ISO 8601 format
-# NOTE: If exportTimeZone is true but not exportTime, the time will be exported
-# NOTE: timeStrCompatibleWithFs: Export the time string compatible with filesystems, using dash instead of two dots
-def getArchTimeStr(exportTime: bool, exportTimeZone: bool, timeStrCompatibleWithFs: bool) -> str:
-    """
-    Get Time String
-    =========================
-
-    Get the date and time string in ISO 8601 format
-
-    Parameters
-    -------------------------
-
-    exportTime: Export the time. If false, it will export only date
-
-    exportTimeZone: Export the time zone information
-
-    timeStrCompatibleWithFs: Make the string output compatible with filesystems avoiding specific characters '/' and ':'
-
-    Notes
-    -------------------------
-
-    1) If exportTimeZone is true but not exportTime, the time will be exported
-
-    2) timeStrCompatibleWithFs: Export the time string compatible with filesystems, using dash instead of two dots
-    """
-
-    timeStr = ""
-
-    if not exportTime and exportTimeZone:
-        exportTime = True
-        pass
-
-    lTime = time.localtime()
-    # Time String for Year-Month-Day:
-    month = f"{lTime.tm_mon}"
-    day = f"{lTime.tm_mday}"
-
-    if lTime.tm_mon < 10:
-        month = f"0{month}"
-        pass
-    if lTime.tm_mday < 10:
-        day = f"0{day}"
-        pass
-
-    if timeStrCompatibleWithFs:
-        timeStr = f"{lTime.tm_year}-{month}-{day}"
-        pass
-    else:
-        timeStr = f"{lTime.tm_year}/{month}/{day}"
-        pass
-
-    # Complete Date Time info for YYYY-MM-dd_HH-mm-ssT<TimeZone>:
-    hour = f"{lTime.tm_hour}"
-    minute = f"{lTime.tm_min}"
-    second = f"{lTime.tm_sec}"
-
-    if lTime.tm_hour < 10:
-        hour = f"0{lTime.tm_hour}"
-        pass
-    if lTime.tm_min < 10:
-        minute = f"0{lTime.tm_min}"
-        pass
-    if lTime.tm_sec < 10:
-        second = f"0{lTime.tm_sec}"
-        pass
-
-    if exportTime:
-        if timeStrCompatibleWithFs:
-            timeStr = f"{timeStr}_{hour}-{minute}-{second}"
-            pass
-        else:
-            timeStr = f"{timeStr} {hour}:{minute}:{second}"
-            pass
-        pass
-
-    if exportTimeZone:
-        timeStr = f"{timeStr}T{lTime.tm_zone}"
-        #if timeStrCompatibleWithFs:
-        #    pass
-        #else:
-        #    timeStr = f"{timeStr} T {lTime.tm_zone}"
-        #    pass
-        pass
-
-    return timeStr
-
-# Write the entries in the log object:
-def wrtArchLogEntry(title: str, msg: str | list[str], logFile: io.TextIOWrapper) -> None:
-    """
-    Write Archive Log Entries
-    ===================================
-
-    White log entries for Archive module compatible functions
-
-    Parameters
-    -----------------------------------
-
-    title: Set the title for log entry
-
-    msg: Set the log message line(s). If is a multiple line message, the function will format the entries automatically
-
-    logFile: A writable object file. This file must be opened to work.
-
-    Notes
-    -----------------------------------
-
-    1) This function does not open or close the object file
-
-    2) This function only writes the line endings with '\\n'
-
-    3) When using multiple lines in msg parameter, the messages with receive a tabulation, indicating that are related to the title
-
-    Example:
-
-    [Title] :
-        Message 1
-        Message 2
-        ...
-    
-    4) Using a single line message, the formatted entry will be: [Title]::Message
-
-    5) If no message is set, the formatted entry will be: Title
-    """
-
-    if logFile.writable() and not logFile.closed :
-        logFile.seek(0, io.SEEK_END)
-
-        logEntry = ""
-
-        if type(msg) == str:
-            logEntry = f"{title}::{msg}\n"
-            pass
-        else:
-            if len(msg) <= 1:
-                if len(msg) == 1:
-                    logEntry = f"{title}::{msg[0]}\n"
-                    pass
-                else:
-                    logEntry = f"{title}\n"
-                    pass
-                pass
-            else:
-                logEntry = f"{title}:\n"
-                for i in msg:
-                    logEntry = logEntry + f"\t{i}\n"
-                    pass
-                pass
-            pass
-
-        if logEntry != "":
-            logFile.writelines(logEntry)
-            pass
-    pass
-
-# Get the complete path list, with more options to filter the files, directories and path patterns:
-def getPathList2(path: str, excludeDirs: list[str] = [], excludeFiles: list[str] = [], excludeLinks: list[str] = [], excludePattern: list[str] = [], bListDir: bool = True, bListFiles: bool = True, bListLinks: bool = False, linksBehavior: int = 0) -> list[str]:
-    """
-    Get Path List 2
-    ===================================
-
-    Function to get files and directories with support to filter files, directories and path patterns.
-
-    This method has optimizations to work in very large analysis scenarios, with reduced loop checking and tests for links
-
-    Parameters
-    -----------------------------------
-
-    **path**: Path to get verified.
-
-    **excludeDirs**: list of directory names to exclude from analysis
-
-    **excludeFiles**: list of files that will be excluded from analysis
-
-    **excludeLinks**: list of links names that will be excluded from analysis
-
-    **excludePattern**: list of patterns in a path (file or directory) to exclude
-
-    **bListDir**: Include directories into path analysis
-
-    **bListFiles**: Include files into path analysis
-
-    **bListLinks**: Include link files into path analysis
-
-    **linksBehavior**: A numerical value that determinate how to treat links during analysis
-
-    Values available:
-
-    0: Do not analyze links. (Skip then)
-
-    1: Treat links as regular files.
-    
-    2: Treat links as particular files (They only will be added when bListLinks is True)
-    
-    3: Follow links. The exclusions lists do not work with them. Except to excludeLinks list
-    
-    **Any other value will have the same meaning as zero**
-
-    Notes
-    -----------------------------------
-
-    1. Links behavior are affected by bListFiles and bListDirs (when behavior is set to 1).
-
-    1.1. If links are treated as regular files, bListFiles should be true to add them into the list
-
-    1.2. If links should be followed, the real path will only be added depending of type of destination path and if bListFiles and/or bListDirs are true.
-    """
-    
-    if not os.path.exists(path):
-        return list[str]
-    
-    if linksBehavior < 0 or linksBehavior > 3:
-        linksBehavior = LinkPathAnalysisBehavior.DO_NOT_ANALYZE
-        pass
-    
-    pathList = []
-
-    listDir = os.listdir(path)
-
-    for i in listDir:
-        pathType = -1 # 0: Directory | 1: File | 2: Link | 3: Other (-1 initialization value)
-        linkDestType = -1 # Link destination path type. Same as pathType, but test the real path pointed by the link
-
-        if os.path.isdir(i):
-            pathType = 0
-            pass
-        elif os.path.isfile(i):
-            pathType = 1
-            pass
-        elif os.path.islink(i):
-            pathType = 2
-            pass
-        else:
-            pathType = 3
-            pass
-
-        # Exclude the links if they are treated as special files and not listed in path list or if they should not be analyzed:
-        if pathType == 2 and ((linksBehavior == LinkPathAnalysisBehavior.TREAT_AS_SPECIAL_FILES and not bListLinks) or linksBehavior == LinkPathAnalysisBehavior.DO_NOT_ANALYZE):
-            pathType = 3 # Change to pathType to skip all other tests
-            pass
-
-        # If is file, directory or link, start the exclusion lists analysis:
-        if pathType < 3:
-            bIsExcludePath = False
-
-            if pathType == 0:
-                for j in excludeDirs:
-                    if i == j:
-                        bIsExcludePath = True
-                        break
-                    pass
-                pass
-            if pathType == 1:
-                for j in excludeFiles:
-                    if i == j:
-                        bIsExcludePath = True
-                        break
-                    pass
-                pass
-            if pathType == 2:
-                for j in excludeLinks:
-                    if i == j:
-                        bIsExcludePath = True
-                        break
-                    pass
-                pass
-
-            # Temporary path:
-            p = path + "/" + i
-
-            if not bIsExcludePath:
-
-                # Check real path if should follow the link path:
-                if pathType == 2 and linksBehavior == LinkPathAnalysisBehavior.FOLLOW_LINK_PATH:
-                    p = os.path.realpath(p)
-
-                    # Test link real path and classify:
-                    if os.path.isdir(p):
-                        linkDestType = 0
-                        pass
-                    elif os.path.isfile(p):
-                        linkDestType = 1
-                        pass
-                    else:
-                        linkDestType = 3 # Other (skip analysis)
-                        bIsExcludePath = True # Exclude path analysis
-                        pass
-                    pass
-                pass
-
-            if not bIsExcludePath:
-                # Exclude items that matches on path patterns exclusion list:
-                for j in excludePattern:
-                    if j.startswith('*') and j.endswith('*'):
-                        j = j.removeprefix('*')
-                        j = j.removesuffix('*')
-                        if p.__contains__(j):
-                            bIsExcludePath = True
-                            break
-                        pass
-                    if j.endswith('*') and not j.startswith('*'):
-                        j = j.removesuffix('*')
-                        if i.startswith(j):
-                            bIsExcludePath = True
-                            break
-                        pass
-                    if j.startswith('*') and not j.endswith('*'):
-                        j = j.removeprefix('*')
-                        if i.endswith(j):
-                            bIsExcludePath = True
-                            break
-                        pass
-                    pass
-                pass
-
-            # If the path was not excluded, test if it should be listed:
-            if not bIsExcludePath:
-                if pathType == 0 and bListDir:
-                    pathList.append(p)
-                    pass
-                if pathType == 1 and bListFiles:
-                    pathList.append(p)
-                    pass
-                if pathType == 2:
-                    # If the links should be treat as files, only add then if files should be added:
-                    if linksBehavior == LinkPathAnalysisBehavior.TREAT_AS_REGULAR_FILES and bListFiles:
-                        pathList.append(p)
-                        pass
-                    # If the links should be treat as special files, only add then if bListLinks is enabled:
-                    if linksBehavior == LinkPathAnalysisBehavior.TREAT_AS_SPECIAL_FILES and bListLinks:
-                        pathList.append(p)
-                        pass
-                    # If the links should be followed, treat check type of path with the listing parameters set:
-                    if linksBehavior == LinkPathAnalysisBehavior.FOLLOW_LINK_PATH:
-                        if linkDestType == 0 and bListDir:
-                            pathList.append(p)
-                            pass
-                        if linkDestType == 1 and bListFiles:
-                            pathList.append(p)
-                            pass
-                        pass
-                    pass
-                pass
-            pass
-
-    return pathList
-
-# Get the complete path list, with more options to filter the files, directories and path patterns:
-def getPathList1(path: str, excludeDirs: list[str] = [], excludeFiles: list[str] = [], excludePattern: list[str] = [], bListDir: bool = True, bListFiles: bool = True) -> list[str]:
-    """
-    Get Path List (Old version)
-    ===================================
-
-    Function to get files and directories with support to filter files, directories and path patterns.
-
-    Parameters
-    -----------------------------------
-
-    **path**: Path to get verified.
-
-    **excludeDirs**: list of directory names to exclude from analysis
-
-    **excludeFiles**: list of files that will be excluded from analysis
-
-    **excludePattern**: list of patterns in a path (file or directory) to exclude
-
-    **bListDir**: Include directories into path analysis
-
-    **bListFiles**: Include files into path analysis
-
-    Notes
-    -----------------------------------
-    """
-    
-    if not os.path.exists(path):
-        return list[str]
-    
-    pathList = []
-
-    listDir = os.listdir(path)
-
-    for i in listDir:
-        bIsExcludeDir = False
-        bIsExcludeFile = False
-
-        for j in excludeDirs:
-            if i == j:
-                bIsExcludeDir = True
-                break
-            pass
-
-        for j in excludeFiles:
-            if i == j:
-                bIsExcludeFile = True
-                break
-            pass
-
-        bAdd2List = False
-
-        if not bIsExcludeDir and not bIsExcludeFile:
-            p = path + "/" + i
-            if os.path.isdir(p):
-                bAdd2List = True
-                pass
-
-            if os.path.isfile(p):
-                bAdd2List = True
-                pass
-
-            for j in excludePattern:
-                if j.startswith('*') and j.endswith('*'):
-                    j = j.removesuffix('*')
-                    j = j.removeprefix('*')
-                    if p.__contains__(j):
-                        bAdd2List = False
-                        break
-                    pass
-
-                if j.endswith('*') and not j.startswith('*'):
-                    j = j.removesuffix('*')
-                    if i.startswith(j):
-                        bAdd2List = False
-                        break
-                    pass
-
-                if j.startswith('*') and not j.endswith('*'):
-                    j = j.removeprefix('*')
-                    if i.endswith(j):
-                        bAdd2List = False
-                        break
-                    pass
-                pass
-
-        if bAdd2List:
-            if os.path.isfile(p) and bListFiles:
-                pathList.append(p)
-                pass
-            if os.path.isdir(p) and bListDir:
-                pathList.append(p)
-                pass
-            pass
-
-    return pathList
+from .archive_general_tools import *
+from .archive_logger import *
 
 # Create an tar file to make the backup:
-def mkTarFile(basepath: str, backup_fileName: str, compress: bool, backupDateTime: str = "") -> (tarfile.TarFile | int):
+def mkTarFile(basepath: str, backup_fileName: str, compress: bool, backupDateTime: str = "", includeDateTime: bool = True) -> (tarfile.TarFile | int):
     """
+    Make a TAR file
+    ===================================
+
+    Create a TAR file and return the object to reuse it.
+
+    If an exception occur, the function will return 1
+
+    Parameters
+    -----------------------------------
+
+    **basepath**: Path where the tar file will be stored
+
+    **backup_fileName**: Base tar file name. The proper extension will be added depending on compress parameter.
+
+    **compress**: If true, it will create a .tar.gzip file.
+
+    **backupDateTime**: String with date and time information about the backup.
+
+    Notes
+    -----------------------------------
+
+    1. If backupDateTime is empty, it will assume the backup is based on current date
+
+    1.1. backupDateTime can be used as a reference to create a compression of older backups that was not archived
+
     """
-    
+
     backup_dateTime = backupDateTime
     if backup_dateTime == "":
         backup_dateTime = getArchTimeStr(True, False, True)
         pass
+
     backup_extension = ".tar"
 
     if compress:
         backup_extension = ".tar.gz"
         pass
 
-    backup_fullname = f"{backup_fileName}_{backup_dateTime}{backup_extension}"
+    backup_fullname = backup_fileName
+
+    if includeDateTime:
+        backup_fullname = f"{backup_fullname}_{backup_dateTime}"
+        pass
+    
+    backup_fullname = backup_fullname + backup_extension
     backup_path = f"{basepath}/{backup_fullname}"
 
     try:
-        tar = tarfile.open(backup_path, "x:gz", None, tarfile.GNU_FORMAT)
+        if compress:
+            tar = tarfile.open(backup_path, "x:gz", None, tarfile.GNU_FORMAT)
+            pass
+        else:
+            tar = tarfile.open(backup_path, "x", None, tarfile.GNU_FORMAT)
+            pass
         return tar
     except:
         print(f"Fail to create the tar file: {sys.exception()}")
         return 1
 
-# Add a new path into the backup file
-# This method return 0 if a file was add and 1 when it is a directory. In case of exception, will return -1. If the path does not exists, will return -2
 def add2TarFile(tarObj: tarfile.TarFile, workPath: str, path2Add: str, includeWorkPath: bool) -> int:
     """
+    Add item to tar file
+    ===================================
+
+    Add a new path into the backup file
+    
+    This method return 0 if a file was add and 1 when it is a directory.
+    
+    In case of exception, will return -1. If the path does not exists, will return -2
     """
     
     current_working_dir = os.getcwd()
@@ -537,63 +122,42 @@ def add2TarFile(tarObj: tarfile.TarFile, workPath: str, path2Add: str, includeWo
         print(f"Exception: {sys.exception()}")
         return -1
 
-# Show a progress bar
-def progressBar(totalPaths, actualPathsProcessed) -> None:
-    consoleLength = os.get_terminal_size().columns
-    barStart = f"Status:["
-    barEnd = f"] "
-    p = actualPathsProcessed / totalPaths * 100
-    p = math.floor(p)
-    
-    if p < 10:
-        barEnd = f"{barEnd}  {p}/100"
-        pass
-    elif p >= 10 and p < 100:
-        barEnd = f"{barEnd} {p}/100"
-        pass
-    else:
-        barEnd = f"{barEnd}{p}/100"
-        pass
-
-    bar = ""
-
-    consoleLengthRemain = consoleLength - (len(barStart) + len(barEnd)) - 50
-    barDrawing = consoleLengthRemain * p / 100
-
-    i = 0
-    while i < consoleLengthRemain:
-        if i <= barDrawing:
-            bar = bar + '█'
-            pass
-        else:
-            bar = bar + '.'
-            pass
-        i = i + 1
-        pass
-
-    bar = barStart + bar + barEnd
-
-    if p < 100:
-        print(bar, end='\r', flush=True, file=sys.stdout)
-        pass
-    else:
-        print(bar, end='\n', flush=True, file=sys.stdout)
-        pass
-    pass
-
 # Make a TAR Backup
-# ---------Params------------
-# backupListPaths: List of paths to make the backup
-# workingDirPath: Base working directory for the backup
-# backupBasePath: Base location for the backup file
-# backupFileName: Name for the TAR file that will receive the backup date and time in it's name
-# baseBackupLogPath: Path to save the backup log. The log file will include the base backup file name and the backup date and time in it's name
-# compressBackupFile: If True, will compress the file with .tar.gz extension
-# includeLogInBackupFile: If True will add the log file inside the base of the backup file and remove from the system temp folder
 def makeTarBackup(backupListPaths: list[str], workingDirPath: str, backupBasePath: str, backupBaseFileName: str, baseBackupLogPath: str, compressBackupFile: bool, includeLogInBackupFile: bool) -> int:
     """
+    Make a TAR Backup
+    ===================================
+
+    Make a backup of the path list using the TAR format.
+
+    It's possible to apply the compression on tar file, using the .tar.gzip format.
+
+    Parameters
+    -----------------------------------
+
+    **backupListPaths**: List of paths to make the backup
+
+    **workingDirPath**: Base working directory for the backup
+
+    **backupBasePath**: Base location for the backup file
+
+    **backupFileName**: Name for the TAR file that will receive the backup date and time in it's name
+
+    **baseBackupLogPath**: Path to save the backup log. The log file will include the base backup file name and the backup date and time in it's name
+
+    **compressBackupFile**: If True, will compress the file with .tar.gz extension
+
+    **includeLogInBackupFile**: If True will add the log file inside the base of the backup file and remove from the system temp folder
     """
+
+    if not os.path.exists(workingDirPath):
+        raise Exception("Can't find the working directory")
+        pass
     
+    if not os.path.exists(baseBackupLogPath):
+        raise Exception("Can't find base location to log file")
+        pass
+
     backup_date_time = getArchTimeStr(True, False, True)
     backupLogPath = f"{baseBackupLogPath}/{backupBaseFileName}_{backup_date_time}.log"
 
@@ -609,7 +173,7 @@ def makeTarBackup(backupListPaths: list[str], workingDirPath: str, backupBasePat
         os.remove(tarCompletePath)
         pass
 
-    tarObj = mkTarFile(tarFileBasePath, tarFileName, compressBackupFile, backup_date_time)
+    tarObj = mkTarFile(tarFileBasePath, tarFileName, compressBackupFile, backup_date_time, True)
 
     # Add the base information about the backup file into the log:
     wrtArchLogEntry("Tar backup file", [tarCompletePath], backupLog)
