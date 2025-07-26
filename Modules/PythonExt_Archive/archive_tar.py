@@ -8,7 +8,7 @@ import math
 # Get the Date Time information as a string, using ISO 8601 format
 # NOTE: If exportTimeZone is true but not exportTime, the time will be exported
 # NOTE: timeStrCompatibleWithFs: Export the time string compatible with filesystems, using dash instead of two dots
-def getTimeStr(exportTime: bool, exportTimeZone: bool, timeStrCompatibleWithFs: bool) -> str:
+def getArchTimeStr(exportTime: bool, exportTimeZone: bool, timeStrCompatibleWithFs: bool) -> str:
     """
     Get Time String
     =========================
@@ -406,7 +406,7 @@ def mkTarFile(basepath: str, backup_fileName: str, compress: bool, backupDateTim
     
     backup_dateTime = backupDateTime
     if backup_dateTime == "":
-        backup_dateTime = getTimeStr(True, False, True)
+        backup_dateTime = getArchTimeStr(True, False, True)
         pass
     backup_extension = ".tar"
 
@@ -527,7 +527,7 @@ def makeTarBackup(backupListPaths: list[str], workingDirPath: str, backupBasePat
     """
     """
     
-    backup_date_time = getTimeStr(True, False, True)
+    backup_date_time = getArchTimeStr(True, False, True)
     backupLogPath = f"{baseBackupLogPath}/{backupBaseFileName}_{backup_date_time}.log"
 
     backupLog = open(backupLogPath, 'wt', encoding="utf-8")
@@ -546,7 +546,7 @@ def makeTarBackup(backupListPaths: list[str], workingDirPath: str, backupBasePat
 
     # Add the base information about the backup file into the log:
     wrtArchLogEntry("Tar backup file", [tarCompletePath], backupLog)
-    wrtArchLogEntry("Backup created", [getTimeStr(True, True, False)], backupLog)
+    wrtArchLogEntry("Backup created", [getArchTimeStr(True, True, False)], backupLog)
     wrtArchLogEntry("---------------------------------------", [], backupLog)
     wrtArchLogEntry("Paths to backup", backupListPaths, backupLog)
     wrtArchLogEntry("---------------------------------------", [], backupLog)
@@ -597,7 +597,7 @@ def makeTarBackup(backupListPaths: list[str], workingDirPath: str, backupBasePat
     wrtArchLogEntry("Backup Resume", backupResume, backupLog)
     wrtArchLogEntry("---------------------------------------", [], backupLog)
 
-    completeTime = getTimeStr(True, True, False)
+    completeTime = getArchTimeStr(True, True, False)
 
     wrtArchLogEntry(f"Backup completed in time: {completeTime}", [], backupLog)
     backupLog.close()
