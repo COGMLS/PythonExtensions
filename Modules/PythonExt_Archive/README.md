@@ -1,21 +1,16 @@
-# Python Modules Extensions
+# Python Archive Tools
 
-This repository is focus on developing Python modules to extend the capabilities from Python 3. Each module has it's own documentation, located inside the *Docs* folder in the own module directory.
+Python module to manage backup, restore and archiving operations.
 
-## Python Modules:
+## Archive Tar Tool:
 
-| Module | Description | Version | Notes |
-| ------ | ----------- | ------- | ----- |
-| Archive | Contains methods to help in archive files and directories for Python 3 | 0.3.0 | In development |
-| ProgressBar | Offers a console progress bar to Python 3 | 1.0.0 |  |
+Python module to produce backup archives using TAR files with option to compress them with "gzip". This module offers additional methods to help in support in log files and get files and directories paths, including support to filter them and following links.
 
 # License
 
-A copy of the license files is available [here](./LICENSE.txt)
-
 MIT License
 
-Copyright (c) 2025 Matheus L. Silvati
+Copyright (c) 2025 Matheus Lopes Silvati
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

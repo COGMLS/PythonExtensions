@@ -1,0 +1,31 @@
+[build-system]
+requires = ["hachling"]
+build-backend = "hachling.build"
+
+[project]
+name = "Python Extension Progress Bar"
+version = "1.0.0"
+dependencies = []
+requires-python = ">= 3.8"
+authors = [
+    {name = "Matheus L. Silvati"}
+]
+maintainers = [
+    {name = "Matheus L. Silvati"}
+]
+description = "A progress bar extension for Python 3"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE.txt"]
+keywords = ["Python Extension", "Module", "Progress Bar"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Programming Language :: Python"
+]
+
+[project.urls]
+Homepage = "https://github.com/COGMLS/PythonExtensions"
+Documentation = "https://github.com/COGMLS/PythonExtensions/blob/master/README.md"
+Repository = "https://github.com/COGMLS/PythonExtensions"
+"Bug Tracker" = "https://github.com/COGMLS/PythonExtensions/me/spam/issues"
+Changelog = "https://github.com/me/spam/blob/master/CHANGELOG.md"
