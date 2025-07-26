@@ -212,25 +212,38 @@ def getPathList2(path: str, excludeDirs: list[str] = [], excludeFiles: list[str]
 
     0: Do not analyze links. (Skip then)
 
-    1: Treat links as files.
+    1: Treat links as regular files.
     
-    2: Follow links. The exclusions lists do not work with them. Except to excludeLinks list
+    2: Treat links as particular files (They only will be added when bListLinks is True)
+    
+    3: Follow links. The exclusions lists do not work with them. Except to excludeLinks list
     
     **Any other value will have the same meaning as zero**
 
     Notes
     -----------------------------------
+
+    1. Links behavior are affected by bListFiles and bListDirs (when behavior is set to 1).
+
+    1.1. If links are treated as regular files, bListFiles should be true to add them into the list
+
+    1.2. If links should be followed, the real path will only be added depending of type of destination path and if bListFiles and/or bListDirs are true.
     """
     
     if not os.path.exists(path):
         return list[str]
+    
+    if linksBehavior < 0 or linksBehavior > 3:
+        linksBehavior = LinkPathAnalysisBehavior.DO_NOT_ANALYZE
+        pass
     
     pathList = []
 
     listDir = os.listdir(path)
 
     for i in listDir:
-        pathType = 0 # 0: Directory | 1: File | 2: Link | 3: Other
+        pathType = -1 # 0: Directory | 1: File | 2: Link | 3: Other (-1 initialization value)
+        linkDestType = -1 # Link destination path type. Same as pathType, but test the real path pointed by the link
 
         if os.path.isdir(i):
             pathType = 0
@@ -245,6 +258,12 @@ def getPathList2(path: str, excludeDirs: list[str] = [], excludeFiles: list[str]
             pathType = 3
             pass
 
+        # Exclude the links if they are treated as special files and not listed in path list or if they should not be analyzed:
+        if pathType == 2 and ((linksBehavior == LinkPathAnalysisBehavior.TREAT_AS_SPECIAL_FILES and not bListLinks) or linksBehavior == LinkPathAnalysisBehavior.DO_NOT_ANALYZE):
+            pathType = 3 # Change to pathType to skip all other tests
+            pass
+
+        # If is file, directory or link, start the exclusion lists analysis:
         if pathType < 3:
             bIsExcludePath = False
 
@@ -262,7 +281,7 @@ def getPathList2(path: str, excludeDirs: list[str] = [], excludeFiles: list[str]
                         break
                     pass
                 pass
-            if pathType == 2 and linksBehavior == 1 or linksBehavior == 2:
+            if pathType == 2:
                 for j in excludeLinks:
                     if i == j:
                         bIsExcludePath = True
@@ -275,11 +294,25 @@ def getPathList2(path: str, excludeDirs: list[str] = [], excludeFiles: list[str]
 
             if not bIsExcludePath:
 
-                # Check real path if is a link:
-                if pathType == 2 and linksBehavior == 2:
+                # Check real path if should follow the link path:
+                if pathType == 2 and linksBehavior == LinkPathAnalysisBehavior.FOLLOW_LINK_PATH:
                     p = os.path.realpath(p)
-                    pass
 
+                    # Test link real path and classify:
+                    if os.path.isdir(p):
+                        linkDestType = 0
+                        pass
+                    elif os.path.isfile(p):
+                        linkDestType = 1
+                        pass
+                    else:
+                        linkDestType = 3 # Other (skip analysis)
+                        bIsExcludePath = True # Exclude path analysis
+                        pass
+                    pass
+                pass
+
+            if not bIsExcludePath:
                 # Exclude items that matches on path patterns exclusion list:
                 for j in excludePattern:
                     if j.startswith('*') and j.endswith('*'):
@@ -304,6 +337,7 @@ def getPathList2(path: str, excludeDirs: list[str] = [], excludeFiles: list[str]
                     pass
                 pass
 
+            # If the path was not excluded, test if it should be listed:
             if not bIsExcludePath:
                 if pathType == 0 and bListDir:
                     pathList.append(p)
@@ -311,8 +345,24 @@ def getPathList2(path: str, excludeDirs: list[str] = [], excludeFiles: list[str]
                 if pathType == 1 and bListFiles:
                     pathList.append(p)
                     pass
-                if pathType == 2 and (linksBehavior == 1 or linksBehavior == 2):
-                    pathList.append(p)
+                if pathType == 2:
+                    # If the links should be treat as files, only add then if files should be added:
+                    if linksBehavior == LinkPathAnalysisBehavior.TREAT_AS_REGULAR_FILES and bListFiles:
+                        pathList.append(p)
+                        pass
+                    # If the links should be treat as special files, only add then if bListLinks is enabled:
+                    if linksBehavior == LinkPathAnalysisBehavior.TREAT_AS_SPECIAL_FILES and bListLinks:
+                        pathList.append(p)
+                        pass
+                    # If the links should be followed, treat check type of path with the listing parameters set:
+                    if linksBehavior == LinkPathAnalysisBehavior.FOLLOW_LINK_PATH:
+                        if linkDestType == 0 and bListDir:
+                            pathList.append(p)
+                            pass
+                        if linkDestType == 1 and bListFiles:
+                            pathList.append(p)
+                            pass
+                        pass
                     pass
                 pass
             pass
