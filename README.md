@@ -6,7 +6,7 @@ This repository is focus on developing Python modules to extend the capabilities
 
 | Module | Description | Version | Notes |
 | ------ | ----------- | ------- | ----- |
-| Archive | Contains methods to help in archive files and directories for Python 3 | 0.3.0 | In development |
+| Archive | Contains methods to help in archive files and directories for Python 3 | 0.3.1 | In development |
 | ProgressBar | Offers a console progress bar to Python 3 | 1.0.0 |  |
 
 # License
