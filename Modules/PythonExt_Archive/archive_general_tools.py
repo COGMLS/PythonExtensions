@@ -231,7 +231,7 @@ def getPaths2Arch2(path: str, excludeDirs: list[str] = [], excludeFiles: list[st
     
     2: Treat links as particular files (They only will be added when bListLinks is True)
     
-    3: Follow links. The exclusions lists do not work with them. Except to excludeLinks list
+    3: Follow links. The exclusions lists do not work with them. Except to excludeLinks and excludePattern lists
     
     **Any other value will have the same meaning as zero**
 
@@ -260,13 +260,16 @@ def getPaths2Arch2(path: str, excludeDirs: list[str] = [], excludeFiles: list[st
         pathType = -1 # 0: Directory | 1: File | 2: Link | 3: Other (-1 initialization value)
         linkDestType = -1 # Link destination path type. Same as pathType, but test the real path pointed by the link
 
-        if os.path.isdir(i):
+        # Temporary path:
+        p = path + "/" + i
+
+        if os.path.isdir(p):
             pathType = 0
             pass
-        elif os.path.isfile(i):
+        elif os.path.isfile(p):
             pathType = 1
             pass
-        elif os.path.islink(i):
+        elif os.path.islink(p):
             pathType = 2
             pass
         else:
@@ -303,9 +306,6 @@ def getPaths2Arch2(path: str, excludeDirs: list[str] = [], excludeFiles: list[st
                         break
                     pass
                 pass
-
-            # Temporary path:
-            p = path + "/" + i
 
             if not bIsExcludePath:
 
