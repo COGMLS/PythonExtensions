@@ -273,9 +273,6 @@ def makeTarBackup(backupListPaths: list[str], workingDirPath: str, backupBasePat
     # Restore the original working directory:
     os.chdir(cwd)
 
-    # Remove the backup log is included into the backup file:
-    backupLog.close()
-
     if includeLogInBackupFile == 1:
         if os.path.exists(backupLogPath):
             os.remove(backupLogPath)
