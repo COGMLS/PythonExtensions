@@ -1,4 +1,9 @@
 """
+Python Extensions - Archive: Logger submodule
+===========================================================
+
+This submodule contains a logger submodule function, to minimize
+the complexity to write a log entry into a text based file.
 """
 
 import io

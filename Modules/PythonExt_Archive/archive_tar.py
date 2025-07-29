@@ -1,4 +1,10 @@
 """
+Python Extensions - Archive: Archive Tar Submodule
+===========================================================
+
+Submodule to make archiving operations with TAR files. It also contain
+auxiliary methods to create the archive file and add files and directories
+into the archive file.
 """
 
 import os

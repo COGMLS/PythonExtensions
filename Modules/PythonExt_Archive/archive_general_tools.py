@@ -1,4 +1,10 @@
 """
+Python Extensions - Archive: General Tools submodule
+===========================================================
+
+This submodule contains all common tools used by Archive Module,
+including methods to filter files and directories to backup.
+
 """
 
 import os
