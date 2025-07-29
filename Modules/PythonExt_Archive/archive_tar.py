@@ -123,7 +123,7 @@ def add2TarFile(tarObj: tarfile.TarFile, workPath: str, path2Add: str, includeWo
         return -1
 
 # Make a TAR Backup
-def makeTarBackup(backupListPaths: list[str], workingDirPath: str, backupBasePath: str, backupBaseFileName: str, baseBackupLogPath: str, compressBackupFile: bool, includeLogInBackupFile: bool) -> int:
+def makeTarBackup(backupListPaths: list[str], workingDirPath: str, backupBasePath: str, backupBaseFileName: str, baseBackupLogPath: str, compressBackupFile: bool, includeLogInBackupFile: int) -> int:
     """
     Make a TAR Backup
     ===================================
@@ -147,7 +147,20 @@ def makeTarBackup(backupListPaths: list[str], workingDirPath: str, backupBasePat
 
     **compressBackupFile**: If True, will compress the file with .tar.gz extension
 
-    **includeLogInBackupFile**: If True will add the log file inside the base of the backup file and remove from the system temp folder
+    **includeLogInBackupFile**: Determinate if the log file will be included inside the base of the backup file.
+
+        Values available:
+
+        0: (Default behavior) Do not include the log into the backup file
+
+        1: Include the log into backup file and remove from original location
+
+        2: Keep the log into the original location and inside the backup file
+    
+    Notes
+    -----------------------------------
+
+    1. If *includeLogInBackupFile* if not an acceptable value, the default behavior will be used
     """
 
     if not os.path.exists(workingDirPath):
@@ -156,6 +169,11 @@ def makeTarBackup(backupListPaths: list[str], workingDirPath: str, backupBasePat
     
     if not os.path.exists(baseBackupLogPath):
         raise Exception("Can't find base location to log file")
+        pass
+
+    # Check includeLogInBackupFile default behavior if does not receive a compatible value:
+    if includeLogInBackupFile < 0 or includeLogInBackupFile > 2:
+        includeLogInBackupFile = 0
         pass
 
     backup_date_time = getArchTimeStr(True, False, True)
@@ -234,7 +252,7 @@ def makeTarBackup(backupListPaths: list[str], workingDirPath: str, backupBasePat
     backupLog.close()
 
     # Add the log file:
-    if includeLogInBackupFile:
+    if includeLogInBackupFile != 0:
         os.chdir(backupLogBasePath)
         logName = backupLogPath.removeprefix(backupLogBasePath)
         if logName.startswith('/'):
@@ -252,7 +270,7 @@ def makeTarBackup(backupListPaths: list[str], workingDirPath: str, backupBasePat
     # Remove the backup log is included into the backup file:
     backupLog.close()
 
-    if includeLogInBackupFile:
+    if includeLogInBackupFile == 1:
         if os.path.exists(backupLogPath):
             os.remove(backupLogPath)
             pass
