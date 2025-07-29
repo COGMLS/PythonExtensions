@@ -1,4 +1,8 @@
 """
+Python Extensions - Archive: Types submodule
+===========================================================
+
+Submodule with classes and datatypes used by other Archive submodules.
 """
 
 import enum
