@@ -1,0 +1,31 @@
+[build-system]
+requires = ["hachling"]
+build-backend = "hachling.build"
+
+[project]
+name = "Python Extension - Filesystem"
+version = "0.1.0"
+dependencies = []
+requires-python = ">= 3.8"
+authors = [
+    {name = "Matheus L. Silvati"}
+]
+maintainers = [
+    {name = "Matheus L. Silvati"}
+]
+description = "Filesystem tools extension for Python 3"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE.txt"]
+keywords = ["Python Extension", "Module", "Filesystem", "Path", "Tool"]
+classifiers = [
+    "Development Status :: 3 - alpha",
+    "Programming Language :: Python"
+]
+
+[project.urls]
+Homepage = "https://github.com/COGMLS/PythonExtensions"
+Documentation = "https://github.com/COGMLS/PythonExtensions/blob/master/README.md"
+Repository = "https://github.com/COGMLS/PythonExtensions"
+"Bug Tracker" = "https://github.com/COGMLS/PythonExtensions/me/spam/issues"
+Changelog = "https://github.com/me/spam/blob/master/CHANGELOG.md"
