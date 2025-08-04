@@ -10,7 +10,7 @@ import os
 import os.path
 import sys
 
-import FilesystemExceptions
+from ..PythonExt_FilesystemTools import filesystem_exceptions
 
 # Get the files list:
 def GetPathItems (path: str, followLinks: bool = False, includeDirectories: bool = True, includeLinkFiles: bool = False) -> list[str]:
@@ -39,7 +39,7 @@ def GetPathItems (path: str, followLinks: bool = False, includeDirectories: bool
     """
 
     if not os.path.isdir(path):
-        raise FilesystemExceptions.PathIsNotDirectory("Path is not a directory")
+        raise filesystem_exceptions.PathIsNotDirectory("Path is not a directory")
         pass
 
     files = []
@@ -135,7 +135,10 @@ def GetPathItems2 (path: str, excludeDirs: list[str] = [], excludeFiles: list[st
         bAdd2List = False
 
         if not bIsExcludeDir and not bIsExcludeFile:
-            p = path + "/" + i
+            if sys.platform != 'win32':
+                p = path + "/" + i
+                pass
+
             if os.path.isdir(p):
                 bAdd2List = True
                 pass
