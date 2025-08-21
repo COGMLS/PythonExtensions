@@ -48,10 +48,12 @@ def GetPathItems (path: str, followLinks: bool = False, includeDirectories: bool
         if os.path.isdir(path):
             list = os.listdir(path)
 
-            j = 0
-            for i in list:
-                list[j] = os.path.join(path, list[j])
-                j = j + 1
+            if sys.platform != 'win32':
+                j = 0
+                while j < len(list):
+                    list[j] = os.path.join(path, list[j])
+                    j = j + 1
+                    pass
                 pass
 
             dirs = []
@@ -136,7 +138,7 @@ def GetPathItems2 (path: str, excludeDirs: list[str] = [], excludeFiles: list[st
 
         if not bIsExcludeDir and not bIsExcludeFile:
             if sys.platform != 'win32':
-                p = path + "/" + i
+                p = os.path.join(path, i)
                 pass
 
             if os.path.isdir(p):
