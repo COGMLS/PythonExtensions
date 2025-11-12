@@ -1,9 +1,9 @@
 """
 """
 
-from ..PythonExt_FilesystemTools import filesystem_exceptions
+from .filesystem_exceptions import *
 
-from enum import IntEnum
+from enum import IntEnum as _IntEnum
 
 class PathNode:
     def __init__(self, data: str):
@@ -12,7 +12,7 @@ class PathNode:
         pass
     pass
 
-class PathType(IntEnum):
+class PathType(_IntEnum):
     UNKNOWN = -1        # Path exist, but it's type could not be determined
     NONE = 0            # Indicates that path has not been evaluated or an error occurred
     NOT_FOUND = 1       # Special treatment flag. Python 3.3 (Always defined if the path can not be founded)

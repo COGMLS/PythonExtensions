@@ -14,8 +14,8 @@ class Path:
     the linked list to string path.
     """
     
-    __head: PathNode
-    __type: PathType
+    __head: PathNode = None
+    __type: PathType = PathType.UNKNOWN
 
     def __init__(self, path: str, pathSeparatorTest = 2):
         PATH_SEPARATOR = ['/','\\']
@@ -42,7 +42,7 @@ class Path:
 
             # Components and prevent empty names (except root) can be added:
             if add2List and temp != "" or add2List and temp == "" and j == 0:
-                self.head = fs_aux_insert_pathNode(self.__head, temp)
+                self.__head = fs_aux_insert_pathNode(self.__head, temp)
                 temp = ""
                 j += 1
                 pass
@@ -51,6 +51,14 @@ class Path:
                 break
             i += 1
             pass
+
+            self.__type = fs_aux_test_path_type(path)
+        pass
+
+    def path_head(self) -> PathNode:
+        return self.__head
+    
+    def parent(self) -> str:
         pass
 
     def toString(self) -> str:
@@ -59,3 +67,7 @@ class Path:
     def type(self) -> PathType:
         return self.__type
     pass
+
+def parent(path: Path) -> Path:
+    return Path(fs_aux_PathNode_parent(path.path_head()))
+

@@ -6,11 +6,11 @@ Python Extensions - Filesystem Python Extension Module
 
 """
 
-import os
-import os.path
-import sys
+import os as _os
+import os.path as _os_path
+import sys as _sys
 
-from ..PythonExt_FilesystemTools import filesystem_exceptions
+from .filesystem_exceptions import *
 
 # Get the files list:
 def GetPathItems (path: str, followLinks: bool = False, includeDirectories: bool = True, includeLinkFiles: bool = False) -> list[str]:
@@ -38,20 +38,20 @@ def GetPathItems (path: str, followLinks: bool = False, includeDirectories: bool
     If the list is empty, no file, directory and link, if included those last components was set
     """
 
-    if not os.path.isdir(path):
-        raise filesystem_exceptions.PathIsNotDirectory("Path is not a directory")
+    if not _os_path.isdir(path):
+        raise PathIsNotDirectory("Path is not a directory")
         pass
 
     files = []
 
-    if os.path.exists(path):
-        if os.path.isdir(path):
-            list = os.listdir(path)
+    if _os_path.exists(path):
+        if _os_path.isdir(path):
+            list = _os.listdir(path)
 
-            if sys.platform != 'win32':
+            if _sys.platform != 'win32':
                 j = 0
                 while j < len(list):
-                    list[j] = os.path.join(path, list[j])
+                    list[j] = _os_path.join(path, list[j])
                     j = j + 1
                     pass
                 pass
@@ -59,8 +59,8 @@ def GetPathItems (path: str, followLinks: bool = False, includeDirectories: bool
             dirs = []
 
             for i in list:
-                if os.path.isdir(i):
-                    if (os.path.islink(i) and followLinks) or (not os.path.islink(i)):
+                if _os_path.isdir(i):
+                    if (_os_path.islink(i) and followLinks) or (not _os_path.islink(i)):
                         dirs.append(i)
                         pass
                     if not includeDirectories:
@@ -70,11 +70,11 @@ def GetPathItems (path: str, followLinks: bool = False, includeDirectories: bool
                 pass
 
             for i in list:
-                if (os.path.isfile(i) and os.path.islink(i) and includeLinkFiles) or (os.path.isfile(i) and not os.path.islink(i)):
+                if (_os_path.isfile(i) and _os_path.islink(i) and includeLinkFiles) or (_os_path.isfile(i) and not _os_path.islink(i)):
                     files.append(i)
                     pass
-                if os.path.isdir(i) and includeDirectories:
-                    if (os.path.islink(i) and includeLinkFiles) or (not os.path.islink(i)):
+                if _os_path.isdir(i) and includeDirectories:
+                    if (_os_path.islink(i) and includeLinkFiles) or (not _os_path.islink(i)):
                         files.append(i)
                         pass
                     pass
@@ -98,8 +98,8 @@ def ListFiles (path: str) -> list[str]:
     """
     filesList = []
 
-    if os.path.exists(path):
-        if os.path.isdir(path):
+    if _os_path.exists(path):
+        if _os_path.isdir(path):
             filesList += GetPathItems(path, False, False, False)
             pass
         else:
@@ -111,12 +111,12 @@ def ListFiles (path: str) -> list[str]:
 
 # Get the complete path list, with more options to filter the files, directories and path patterns:
 def GetPathItems2 (path: str, excludeDirs: list[str] = [], excludeFiles: list[str] = [], excludePattern: list[str] = [], includeDirs: bool = True, includeFiles: bool = True, includeLinkFiles: bool = True, followLinks: bool = False) -> list[str]:
-    if not os.path.exists(path):
+    if not _os_path.exists(path):
         return list[str]
     
     pathList = []
 
-    listDir = os.listdir(path)
+    listDir = _os.listdir(path)
 
     for i in listDir:
         bIsExcludeDir = False
@@ -137,15 +137,15 @@ def GetPathItems2 (path: str, excludeDirs: list[str] = [], excludeFiles: list[st
         bAdd2List = False
 
         if not bIsExcludeDir and not bIsExcludeFile:
-            if sys.platform != 'win32':
-                p = os.path.join(path, i)
+            if _sys.platform != 'win32':
+                p = _os_path.join(path, i)
                 pass
 
-            if os.path.isdir(p):
+            if _os_path.isdir(p):
                 bAdd2List = True
                 pass
 
-            if os.path.isfile(p):
+            if _os_path.isfile(p):
                 bAdd2List = True
                 pass
 
@@ -174,10 +174,10 @@ def GetPathItems2 (path: str, excludeDirs: list[str] = [], excludeFiles: list[st
                 pass
 
         if bAdd2List:
-            if os.path.isfile(p) and includeFiles:
+            if _os_path.isfile(p) and includeFiles:
                 pathList.append(p)
                 pass
-            if os.path.isdir(p) and includeDirs:
+            if _os_path.isdir(p) and includeDirs:
                 pathList.append(p)
                 pass
             pass

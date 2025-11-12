@@ -7,9 +7,9 @@ Python Extensions - Filesystem Tools Exception classes
 
 """
 
-from enum import IntEnum
+from enum import IntEnum as _IntEnum
 
-class FilesystemErrorCodesValues(IntEnum):
+class FilesystemErrorCodesValues(_IntEnum):
     """
     Filesystem Error Code enumerator
     """
